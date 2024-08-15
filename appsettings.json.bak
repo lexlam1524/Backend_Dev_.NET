@@ -1,0 +1,15 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  {
+    "ConnectionStrings": {
+        "RobotDatabase": "Host=localhost;Database=sit331;Username=postgres;Password=lam789123"
+    }
+}
+  
+}
