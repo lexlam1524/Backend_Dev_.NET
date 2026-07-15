@@ -1,4 +1,5 @@
-﻿using Npgsql;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
 using robot_controller_api.Models;
 
 
@@ -6,11 +7,17 @@ namespace robot_controller_api.Persistence
 {
     public class RobotCommandADO : IRobotCommandDataAccess
     {
-        private const string CONNECTION_STRING ="Host=localhost;Username=postgres;Password=lam789123;Database=sit331";
+        private readonly string _connectionString;
+
+        public RobotCommandADO(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("RobotDatabase")
+                ?? throw new InvalidOperationException("Connection string 'RobotDatabase' is not configured.");
+        }
         public  List<Robotcommand> GetRobotCommands()
         {
             var robotCommands = new List<Robotcommand>();
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
             using var cmd = new NpgsqlCommand("SELECT * FROM robotcommand", conn);
             using var dr = cmd.ExecuteReader();
@@ -40,7 +47,7 @@ namespace robot_controller_api.Persistence
 
         public void InsertRobotCommand(Robotcommand command)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("INSERT INTO robotcommand (\"Name\", description, ismovecommand, createddate, modifieddate) VALUES (@name, @description, @ismovecommand, @createddate, @modifieddate)", conn);
@@ -54,7 +61,7 @@ namespace robot_controller_api.Persistence
         }
          public  void UpdateRobotCommand(Robotcommand command)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("UPDATE robotcommand SET \"Name\" = @name, description = @description, ismovecommand = @ismovecommand, createddate = @createddate, modifieddate = @modifieddate WHERE id = @id", conn);
@@ -70,7 +77,7 @@ namespace robot_controller_api.Persistence
 
         public  void DeleteRobotCommand(int id)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("DELETE FROM robotcommand WHERE id = @id", conn);
@@ -80,3 +87,4 @@ namespace robot_controller_api.Persistence
         }
     }
 }
+

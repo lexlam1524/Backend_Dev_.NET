@@ -1,16 +1,23 @@
-﻿using Npgsql;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
 using robot_controller_api.Models;
 
 namespace robot_controller_api.Persistence
 {
     public class UserADO : IUserDataAccess
     {
-        private const string CONNECTION_STRING = "Host=localhost;Username=postgres;Password=lam789123;Database=sit331";
+        private readonly string _connectionString;
+
+        public UserADO(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("RobotDatabase")
+                ?? throw new InvalidOperationException("Connection string 'RobotDatabase' is not configured.");
+        }
 
         public List<UserModel> GetUsers()
         {
             var users = new List<UserModel>();
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
             using var cmd = new NpgsqlCommand("SELECT * FROM users", conn);
             using var dr = cmd.ExecuteReader();
@@ -45,7 +52,7 @@ namespace robot_controller_api.Persistence
 
         public UserModel GetUserByEmail(string email)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
             using var cmd = new NpgsqlCommand("SELECT * FROM users WHERE email = @email", conn);
             cmd.Parameters.AddWithValue("@email", email);
@@ -81,7 +88,7 @@ namespace robot_controller_api.Persistence
 
         public void InsertUser(UserModel user)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("INSERT INTO users (email, firstname, lastname, passwordhash, description, role, createddate, modifieddate) VALUES (@email, @firstname, @lastname, @passwordhash, @description, @role, @createddate, @modifieddate)", conn);
@@ -99,7 +106,7 @@ namespace robot_controller_api.Persistence
 
         public void UpdateUser(UserModel user)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("UPDATE users SET email = @email, firstname = @firstname, lastname = @lastname, passwordhash = @passwordhash, description = @description, role = @role, modifieddate = @modifieddate WHERE id = @id", conn);
@@ -117,7 +124,7 @@ namespace robot_controller_api.Persistence
 
         public void DeleteUser(int id)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("DELETE FROM users WHERE id = @id", conn);

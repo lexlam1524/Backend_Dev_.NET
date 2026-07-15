@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using robot_controller_api.Models;
@@ -29,40 +29,51 @@ namespace robot_controller_api.Authentication
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            Response.Headers.Append("WWW-Authenticate", @"Basic realm=""Access to the robot controller.""");
 
-            base.Response.Headers.Add("WWW-Authenticate", @"Basic realm=""Access to the robot controller.""");
-            var authHeader = Request.Headers["Authorization"].ToString();
-            // Authentication logic will be here.
-            var credentialBytes = Convert.FromBase64String(authHeader.Replace("Basic ", ""));
-            var credentials = Encoding.UTF8.GetString(credentialBytes).Split(new[] { ':' }, 2);
-            string[] parts = credentials;
-            if (parts.Length < 2)
+            var authHeader = Request.Headers.Authorization.ToString();
+            if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult(AuthenticateResult.Fail("Missing or invalid authorization header."));
+            }
+
+            string[] credentials;
+            try
+            {
+                var credentialBytes = Convert.FromBase64String(authHeader["Basic ".Length..].Trim());
+                credentials = Encoding.UTF8.GetString(credentialBytes).Split(new[] { ':' }, 2);
+            }
+            catch (FormatException)
             {
                 return Task.FromResult(AuthenticateResult.Fail("Invalid authorization header."));
             }
-            string email = parts[0];
-            string password = parts[1];
 
-      
-            UserModel user = _userDataAccess.GetUserByEmail(email);
+            if (credentials.Length < 2)
+            {
+                return Task.FromResult(AuthenticateResult.Fail("Invalid authorization header."));
+            }
+
+            var email = credentials[0];
+            var password = credentials[1];
+            var user = _userDataAccess.GetUserByEmail(email);
 
             if (user == null)
             {
-                Response.StatusCode = 401;
-                return Task.FromResult(AuthenticateResult.Fail("User not found."));
+                return Task.FromResult(AuthenticateResult.Fail("Invalid username or password."));
             }
-            
 
-            var hasher = new PasswordHasher<UserModel>();
-            var pwVerificationResult = hasher.VerifyHashedPassword(user, user.PasswordHash, password);
+            var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+            if (passwordVerificationResult == PasswordVerificationResult.Failed)
+            {
+                return Task.FromResult(AuthenticateResult.Fail("Invalid username or password."));
+            }
 
             var claims = new[]
             {
-                new Claim("name", $"{user.FirstName} {user.LastName}"),
-                new Claim(ClaimTypes.Role, user.Role)
-                // any other claims that you think might be useful
+                new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
+                new Claim(ClaimTypes.Role, user.Role ?? string.Empty)
             };
-            var identity = new ClaimsIdentity(claims, "Basic");
+            var identity = new ClaimsIdentity(claims, Scheme.Name);
             var claimsPrincipal = new ClaimsPrincipal(identity);
             var authTicket = new AuthenticationTicket(claimsPrincipal, Scheme.Name);
 

@@ -1,4 +1,5 @@
-﻿using Npgsql;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
 using robot_controller_api.Models;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
@@ -6,12 +7,18 @@ namespace robot_controller_api.Persistence
 {
     public class MapADO : IMapDataAccess
     {
-        private const string CONNECTION_STRING = "Host=localhost;Username=postgres;Password=lam789123;Database=sit331";
+        private readonly string _connectionString;
+
+        public MapADO(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("RobotDatabase")
+                ?? throw new InvalidOperationException("Connection string 'RobotDatabase' is not configured.");
+        }
 
         public  List<Map> GetMaps()
         {
             var maps = new List<Map>();
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
             using var cmd = new NpgsqlCommand("SELECT * FROM map", conn);
             using var dr = cmd.ExecuteReader();
@@ -41,7 +48,7 @@ namespace robot_controller_api.Persistence
         }
         public  void InsertMap(Map newMap)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("INSERT INTO map (\"Name\", description, columns, rows, createddate, modifieddate) VALUES (@name, @description, @columns, @rows, @createddate, @modifieddate)", conn);
@@ -57,7 +64,7 @@ namespace robot_controller_api.Persistence
 
         public  void UpdateMap(Map updatedMap)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("UPDATE map SET \"Name\" = @name, description = @description, columns = @columns, rows = @rows, modifieddate = @modifieddate WHERE id = @id", conn);
@@ -73,7 +80,7 @@ namespace robot_controller_api.Persistence
 
         public  void DeleteMap(int id)
         {
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
             using var cmd = new NpgsqlCommand("DELETE FROM map WHERE id = @id", conn);
@@ -84,3 +91,4 @@ namespace robot_controller_api.Persistence
     }
     
 }
+

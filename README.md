@@ -1,45 +1,123 @@
-# .NET Core Enterprise Web API & Security Framework
+# Robot Controller API
 
-## Overview
+ASP.NET Core Web API for managing robot commands, maps, and authenticated users. The project demonstrates C# backend development, REST endpoints, PostgreSQL data access, dependency injection, Basic Authentication, role-based authorization, and Swagger/OpenAPI documentation.
 
-This repository demonstrates my expertise in building robust and scalable backend applications using .NET Core and Entity Framework. The project showcases a comprehensive backend solution with advanced features and best practices.
+## Tech Stack
 
-## Key Features
+- .NET 8 / ASP.NET Core Web API
+- C#
+- PostgreSQL
+- Npgsql
+- Entity Framework Core model mapping
+- Basic Authentication
+- Swagger / Swashbuckle
 
-* **Persistence Layer**: Implemented using Repository Pattern and Entity Framework Core for efficient data access and management
-* **Authentication and Authorization**: Secure authentication using HTTP Basic Authentication and authorization using claims-based authentication and policies
-* **User Management**: User registration, login, and management with password hashing and verification
-* **API Endpoints**: Protected endpoints for user management, robot commands, and maps using authorization attributes
-* **Dependency Injection**: Loose coupling and testability using dependency injection
-* **Reverse Engineering**: Database schema and models recreated through reverse engineering of existing database
+## Features
 
-## Technology Stack
-
-* **.NET Core**: Built using .NET Core for high-performance and cross-platform compatibility
-* **Entity Framework Core**: Utilized Entity Framework Core for efficient data access and management
-* **Handlebars or T4**: Advanced templating using Handlebars or T4 libraries
-* **Postman**: API testing using Postman
+- CRUD endpoints for robot commands
+- CRUD endpoints for maps
+- User lookup and user management endpoints
+- Password hashing with `PasswordHasher<UserModel>`
+- Basic Authentication handler
+- Role-based authorization policies for `Admin` and `User`
+- Swagger UI for browser-based API testing
 
 ## Project Structure
 
-* **Controllers**: API controllers for user management, robot commands, and maps
-* **Models**: Entity models for users, robot commands, and maps
-* **Persistence**: Persistence layer implementation using Repository Pattern and Entity Framework Core
-* **Templates**: Advanced templating using Handlebars or T4 libraries
-* **Authentication**: Basic authentication implementation using HTTP Basic Authentication
-* **Authorization**: Authorization implementation using claims-based authentication and policies
+- `Controllers/` - API controllers for maps, robot commands, and users
+- `Models/` - request and entity models
+- `Persistence/` - PostgreSQL data access and EF Core context
+- `Authentication/` - Basic Authentication handler
+- `41p-schema.sql` - database schema dump for the map and robot command tables
+- `Program.cs` - dependency injection, authentication, authorization, and Swagger setup
 
-## Getting Started
+## Prerequisites
 
-1. Clone the repository
-2. Install required NuGet packages
-3. Run the application using `dotnet run`
-4. Test API endpoints using Postman
+- .NET 8 SDK
+- PostgreSQL
+- A local PostgreSQL database named `sit331`, or your own database name in the connection string
 
-## Contributing
+## Configuration
 
-Contributions are welcome! Please submit a pull request with your changes.
+The application reads the database connection string from `ConnectionStrings:RobotDatabase`.
 
-## License
+The committed `appsettings.json` contains a placeholder only:
 
-This project is licensed under the MIT License.
+```json
+"ConnectionStrings": {
+  "RobotDatabase": "Host=localhost;Database=sit331;Username=postgres;Password=YOUR_LOCAL_PASSWORD"
+}
+```
+
+Do not commit your real database password. For local development, set the connection string with an environment variable before running the app.
+
+PowerShell example:
+
+```powershell
+$env:ConnectionStrings__RobotDatabase="Host=localhost;Database=sit331;Username=postgres;Password=your_password"
+dotnet run
+```
+
+The double underscore `__` maps to `:` in ASP.NET Core configuration, so `ConnectionStrings__RobotDatabase` becomes `ConnectionStrings:RobotDatabase`.
+
+## Database Setup
+
+Create a PostgreSQL database named `sit331`, then run the schema script:
+
+```powershell
+psql -U postgres -d sit331 -f 41p-schema.sql
+```
+
+Current note: `41p-schema.sql` contains the `map` and `robotcommand` tables. The authentication and user endpoints also expect a `users` table with columns used by `UserADO.cs`: `id`, `email`, `firstname`, `lastname`, `passwordhash`, `description`, `role`, `createddate`, and `modifieddate`.
+
+## Run the API
+
+```powershell
+dotnet restore
+dotnet build
+dotnet run
+```
+
+The default development URLs are configured in `Properties/launchSettings.json`:
+
+- `https://localhost:7253`
+- `http://localhost:5239`
+
+## Swagger UI
+
+When running in Development mode, open:
+
+```text
+https://localhost:7253/swagger
+```
+
+Swagger lists the available endpoints and includes Basic Authentication support through the `Authorize` button.
+
+## Main Endpoints
+
+- `GET /api/robot-commands`
+- `GET /api/robot-commands/move`
+- `POST /api/robot-commands`
+- `GET /api/maps`
+- `GET /api/maps/square`
+- `GET /api/maps/{id}/{x}-{y}`
+- `GET /api/users`
+- `GET /api/users/admin`
+
+Some endpoints require a valid Basic Auth user and role.
+
+## Build Status
+
+The project currently builds with warnings:
+
+```powershell
+dotnet build
+```
+
+Known remaining cleanup items:
+
+- Upgrade vulnerable/outdated NuGet packages
+- Replace obsolete `ISystemClock` usage in the authentication handler
+- Clean nullable reference warnings
+- Add automated tests
+- Add a complete user-table setup/seed script

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using robot_controller_api.Models;
@@ -18,17 +18,6 @@ public partial class RobotContext : DbContext
     public virtual DbSet<Map> Maps { get; set; }
 
     public virtual DbSet<Robotcommand> Robotcommands { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder
-                .UseNpgsql("Host=localhost;Database=sit331;Username=postgres;Password=lam789123")
-                .LogTo(Console.Write)
-                .EnableSensitiveDataLogging();
-        }
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -82,3 +71,5 @@ public partial class RobotContext : DbContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
+

@@ -1,4 +1,5 @@
-﻿using FastMember;
+using FastMember;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 using robot_controller_api.Models;
 using System;
@@ -11,11 +12,17 @@ namespace robot_controller_api.Persistence
     public class MapRepository : IMapDataAccess, IRepository
     {
         private IRepository _repo => this;
-        private const string CONNECTION_STRING = "Host=localhost;Username=postgres;Password=lam789123;Database=sit331";
+        private readonly string _connectionString;
+
+        public MapRepository(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("RobotDatabase")
+                ?? throw new InvalidOperationException("Connection string 'RobotDatabase' is not configured.");
+        }
         public List<T> ExecuteReader<T>(string sqlCommand, NpgsqlParameter[] dbParams = null) where T : class, new()
         {
             var entities = new List<T>();
-            using var conn = new NpgsqlConnection(CONNECTION_STRING);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
             using var cmd = new NpgsqlCommand(sqlCommand, conn);
 
@@ -82,3 +89,4 @@ namespace robot_controller_api.Persistence
         }
     }
 }
+

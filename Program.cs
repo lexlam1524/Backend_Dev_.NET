@@ -6,13 +6,48 @@ using robot_controller_api.Authentication;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using robot_controller_api.Models;
+using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
+var robotDatabaseConnectionString = builder.Configuration.GetConnectionString("RobotDatabase")
+    ?? throw new InvalidOperationException("Connection string 'RobotDatabase' is not configured.");
+
 builder.Services.AddDbContext<RobotContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("RobotDatabase")));
+    options.UseNpgsql(robotDatabaseConnectionString));
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Robot Controller API",
+        Version = "v1"
+    });
+    options.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "basic",
+        In = ParameterLocation.Header,
+        Description = "Enter your email and password using Basic Authentication."
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Basic"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 //4.1p
 builder.Services.AddScoped<IRobotCommandDataAccess, RobotCommandADO>();
 builder.Services.AddScoped<IMapDataAccess, MapADO>();
@@ -35,9 +70,19 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
+
+
+
+
